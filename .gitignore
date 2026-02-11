@@ -1,21 +1,52 @@
-# Build directories
+# Build artifacts
 build/
-cmake-build-debug/
-cmake-build-release/
+cmake-build-*/
+out/
+bin/
+lib/
+dist/
 
-# IDE-specific files and directories
-.idea/
-.vscode/
-
-# Virtual environment
-.venv/
-__pycache__/
-
-# Log files
-*.log
-
-# CMake cache and other temporary files
+# CMake and build system
 CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake
 install_manifest.txt
+compile_commands.json
+CMakeUserPresets.json
+CTestTestfile.cmake
+DartConfiguration.tcl
+Testing/
+
+# IDE and editor files
+.idea/
+.vscode/
+.vs/
+*.iml
+*.swp
+*~
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+
+# Logs and temp
+*.log
+*.tmp
+
+# Coverage and profiling
+*.gcda
+*.gcno
+*.gcov
+*.profraw
+*.profdata
+coverage/
+lcov.info
+
+# OS files
+.DS_Store
+Thumbs.db
