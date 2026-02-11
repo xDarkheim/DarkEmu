@@ -1,12 +1,17 @@
+# Copyright (c) DarkEmu
+# Build configuration and component wiring.
 cmake_minimum_required(VERSION 4.1)
 project(DarkEmu LANGUAGES CXX)
 
+# Use a consistent C++20 toolchain and avoid compiler-specific extensions.
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# Build shared common code and the ConnectServer module.
 add_subdirectory(src/Common)
 add_subdirectory(src/Servers/Connect)
 
+# Enable CTest and register the project's tests.
 enable_testing()
 add_subdirectory(tests)

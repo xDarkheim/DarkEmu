@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) DarkEmu
+ * Protocol test for the ConnectServer server list response.
+ */
+
 #include "ConnectServer/ServerEngine.h"
 
 #include <array>
@@ -15,6 +20,7 @@
 
 namespace {
 
+// Configure a socket receive timeout in milliseconds.
 bool setRecvTimeout(int fd, int timeoutMs) {
     timeval tv{};
     tv.tv_sec = timeoutMs / 1000;
@@ -22,6 +28,7 @@ bool setRecvTimeout(int fd, int timeoutMs) {
     return ::setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) == 0;
 }
 
+// Send all bytes, retrying on EINTR.
 bool sendAll(int fd, const uint8_t* data, size_t size) {
     size_t offset = 0;
     while (offset < size) {
@@ -38,6 +45,7 @@ bool sendAll(int fd, const uint8_t* data, size_t size) {
     return true;
 }
 
+// Receive an exact number of bytes, retrying on EINTR.
 bool recvExact(int fd, uint8_t* data, size_t size) {
     size_t offset = 0;
     while (offset < size) {
@@ -61,6 +69,7 @@ bool recvExact(int fd, uint8_t* data, size_t size) {
 
 int main() {
     try {
+        // Start the server in the background using a short poll loop.
         ServerEngine server(0);
         std::atomic_bool stop{false};
         std::thread server_thread([&] {
@@ -69,6 +78,7 @@ int main() {
             }
         });
 
+        // Query the actual port chosen by the server.
         uint16_t port = server.port();
         if (port == 0) {
             std::cerr << "Failed to determine server port\n";
@@ -77,6 +87,7 @@ int main() {
             return 1;
         }
 
+        // Create a client socket and connect to the server.
         int fd = ::socket(AF_INET, SOCK_STREAM, 0);
         if (fd == -1) {
             std::cerr << "Socket creation failed\n";
@@ -85,6 +96,7 @@ int main() {
             return 1;
         }
 
+        // Configure a receive timeout so the test doesn't hang.
         if (!setRecvTimeout(fd, 1000)) {
             std::cerr << "Failed to set receive timeout\n";
         }
@@ -102,6 +114,7 @@ int main() {
             return 1;
         }
 
+        // Send the server list request packet.
         std::array<uint8_t, 4> request{0xC1, 0x04, 0xF4, 0x06};
         if (!sendAll(fd, request.data(), request.size())) {
             std::cerr << "Failed to send request\n";
@@ -111,7 +124,8 @@ int main() {
             return 1;
         }
 
-        std::array<uint8_t, 8> response{};
+        // Read the full server list response packet.
+        std::array<uint8_t, 12> response{};
         if (!recvExact(fd, response.data(), response.size())) {
             std::cerr << "Failed to receive response\n";
             ::close(fd);
@@ -120,7 +134,12 @@ int main() {
             return 1;
         }
 
-        std::array<uint8_t, 8> expected{0xC2, 0x08, 0xF4, 0x06, 0x01, 0x00, 0x01, 0x00};
+        // Validate that the response matches the expected server list layout.
+        std::array<uint8_t, 12> expected{
+            0xC2, 0x0C, 0xF4, 0x06,
+            0x00, 0x00, 0x00, 0x01,
+            0x14, 0x00, 0x00, 0x01
+        };
         if (response != expected) {
             std::cerr << "Unexpected response payload\n";
             ::close(fd);
@@ -129,6 +148,7 @@ int main() {
             return 1;
         }
 
+        // Cleanup resources and stop the server thread.
         ::close(fd);
         stop.store(true);
         server_thread.join();

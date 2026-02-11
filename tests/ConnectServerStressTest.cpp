@@ -1,3 +1,8 @@
+/**
+ * Copyright (c) DarkEmu
+ * Stress test for concurrent ConnectServer server list requests.
+ */
+
 #include "ConnectServer/ServerEngine.h"
 
 #include <array>
@@ -16,6 +21,7 @@
 
 namespace {
 
+// Configure send/receive timeouts in milliseconds.
 bool setTimeouts(int fd, int timeoutMs) {
     timeval tv{};
     tv.tv_sec = timeoutMs / 1000;
@@ -26,6 +32,7 @@ bool setTimeouts(int fd, int timeoutMs) {
     return ::setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv)) == 0;
 }
 
+// Send all bytes, retrying on EINTR.
 bool sendAll(int fd, const uint8_t* data, size_t size) {
     size_t offset = 0;
     while (offset < size) {
@@ -42,6 +49,7 @@ bool sendAll(int fd, const uint8_t* data, size_t size) {
     return true;
 }
 
+// Receive an exact number of bytes, retrying on EINTR.
 bool recvExact(int fd, uint8_t* data, size_t size) {
     size_t offset = 0;
     while (offset < size) {
@@ -61,12 +69,15 @@ bool recvExact(int fd, uint8_t* data, size_t size) {
     return true;
 }
 
+// Execute one complete request/response cycle.
 bool runClient(uint16_t port) {
+    // Open a client socket to the ConnectServer.
     int fd = ::socket(AF_INET, SOCK_STREAM, 0);
     if (fd == -1) {
         return false;
     }
 
+    // Apply short timeouts to avoid long stalls.
     setTimeouts(fd, 1000);
 
     sockaddr_in addr{};
@@ -74,24 +85,32 @@ bool runClient(uint16_t port) {
     addr.sin_port = htons(port);
     addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
+    // Connect to the server.
     if (::connect(fd, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) == -1) {
         ::close(fd);
         return false;
     }
 
+    // Send the server list request.
     std::array<uint8_t, 4> request{0xC1, 0x04, 0xF4, 0x06};
     if (!sendAll(fd, request.data(), request.size())) {
         ::close(fd);
         return false;
     }
 
-    std::array<uint8_t, 8> response{};
+    // Receive the full server list response.
+    std::array<uint8_t, 12> response{};
     if (!recvExact(fd, response.data(), response.size())) {
         ::close(fd);
         return false;
     }
 
-    std::array<uint8_t, 8> expected{0xC2, 0x08, 0xF4, 0x06, 0x01, 0x00, 0x01, 0x00};
+    std::array<uint8_t, 12> expected{
+        0xC2, 0x0C, 0xF4, 0x06,
+        0x00, 0x00, 0x00, 0x01,
+        0x14, 0x00, 0x00, 0x01
+    };
+    // Compare the response to the expected payload.
     bool ok = response == expected;
     ::close(fd);
     return ok;
@@ -101,6 +120,7 @@ bool runClient(uint16_t port) {
 
 int main() {
     try {
+        // Start the server in the background with a tight polling loop.
         ServerEngine server(0);
         std::atomic_bool stop{false};
         std::thread server_thread([&] {
@@ -109,6 +129,7 @@ int main() {
             }
         });
 
+        // Capture the bound port for client connections.
         uint16_t port = server.port();
         if (port == 0) {
             std::cerr << "Failed to determine server port\n";
@@ -117,6 +138,7 @@ int main() {
             return 1;
         }
 
+        // Launch multiple clients in parallel.
         constexpr int kThreads = 8;
         constexpr int kIterations = 8;
         std::atomic_int failures{0};
@@ -134,13 +156,16 @@ int main() {
             });
         }
 
+        // Wait for all clients to finish.
         for (auto& t : clients) {
             t.join();
         }
 
+        // Shut down the server loop.
         stop.store(true);
         server_thread.join();
 
+        // Report any failures detected by the client threads.
         if (failures.load() != 0) {
             std::cerr << "Stress test failed for " << failures.load() << " client(s)\n";
             return 1;
