@@ -20,6 +20,11 @@ ServerListManager* ServerListManager::Instance() {
 }
 
 void ServerListManager::Load() {
+    // Respect pre-seeded entries (useful for tests).
+    if (!servers_.empty()) {
+        return;
+    }
+
     // Load the default config file from the ConnectServer data directory.
     if (!LoadFromFile("src/Servers/Connect/Data/ServerList.json")) {
         std::cerr << "ServerListManager: failed to load src/Servers/Connect/Data/ServerList.json\n";
@@ -157,6 +162,17 @@ bool ServerListManager::LoadFromFile(const std::string& filename) {
     }
 
     return true;
+}
+
+void ServerListManager::AddServer(uint16_t code, std::string name, std::string ip, uint16_t port, bool visible) {
+    GameServerInfo info{};
+    info.ServerCode = code;
+    info.Percent = 0;
+    info.Name = std::move(name);
+    info.IP = std::move(ip);
+    info.Port = port;
+    info.Visible = visible;
+    servers_.push_back(std::move(info));
 }
 
 void ServerListManager::GetPacket(std::vector<uint8_t>& buffer) const {

@@ -33,6 +33,8 @@ public:
     void Load();
     /// Load server data from a JSON config file.
     bool LoadFromFile(const std::string& filename);
+    /// Add a server entry manually (used by tests).
+    void AddServer(uint16_t code, std::string name, std::string ip, uint16_t port, bool visible);
     /// Serialize the current server list into a packet buffer.
     void GetPacket(std::vector<uint8_t>& buffer) const;
     /// Find a server entry by its server code.

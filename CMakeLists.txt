@@ -11,6 +11,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Build shared common code and the ConnectServer module.
 add_subdirectory(src/Common)
 add_subdirectory(src/Servers/Connect)
+add_subdirectory(src/Servers/Game)
 
 # Enable CTest and register the project's tests.
 enable_testing()

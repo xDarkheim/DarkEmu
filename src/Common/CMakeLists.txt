@@ -7,6 +7,9 @@ add_library(DarkEmuCommon STATIC
     Utils/Logger.cpp
 )
 
+# Backward-compatible alias for older build scripts.
+add_library(DarkheimCommon ALIAS DarkEmuCommon)
+
 # Expose public headers for downstream targets.
 target_include_directories(DarkEmuCommon PUBLIC
     ${PROJECT_SOURCE_DIR}/include
