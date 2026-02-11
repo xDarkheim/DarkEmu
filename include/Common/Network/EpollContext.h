@@ -1,5 +1,5 @@
-#ifndef DARKHEIMMU_EPOLLCONTEXT_H
-#define DARKHEIMMU_EPOLLCONTEXT_H
+#ifndef DARKEMU_EPOLLCONTEXT_H
+#define DARKEMU_EPOLLCONTEXT_H
 
 #include <span>
 #include <sys/epoll.h>
@@ -30,4 +30,4 @@ private:
     int fd_{-1};
 };
 
-#endif // DARKHEIMMU_EPOLLCONTEXT_H
+#endif // DARKEMU_EPOLLCONTEXT_H

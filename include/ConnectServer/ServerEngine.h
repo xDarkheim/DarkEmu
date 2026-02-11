@@ -1,5 +1,5 @@
-#ifndef DARKHEIMMU_SERVERENGINE_H
-#define DARKHEIMMU_SERVERENGINE_H
+#ifndef DARKEMU_SERVERENGINE_H
+#define DARKEMU_SERVERENGINE_H
 
 #include <cstdint>
 #include <unordered_map>
@@ -34,4 +34,4 @@ private:
     uint16_t port_{0};
 };
 
-#endif // DARKHEIMMU_SERVERENGINE_H
+#endif // DARKEMU_SERVERENGINE_H

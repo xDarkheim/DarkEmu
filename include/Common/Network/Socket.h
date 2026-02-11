@@ -1,5 +1,5 @@
-#ifndef DARKHEIMMU_SOCKET_H
-#define DARKHEIMMU_SOCKET_H
+#ifndef DARKEMU_SOCKET_H
+#define DARKEMU_SOCKET_H
 
 #include <cstdint>
 #include <span>
@@ -38,4 +38,4 @@ private:
     int fd_{-1};
 };
 
-#endif // DARKHEIMMU_SOCKET_H
+#endif // DARKEMU_SOCKET_H

@@ -1,8 +1,8 @@
-#ifndef DARKHEIMMU_LOGGER_H
-#define DARKHEIMMU_LOGGER_H
+#ifndef DARKEMU_LOGGER_H
+#define DARKEMU_LOGGER_H
 
 
 class Logger {};
 
 
-#endif // DARKHEIMMU_LOGGER_H
+#endif // DARKEMU_LOGGER_H
