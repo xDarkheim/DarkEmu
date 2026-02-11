@@ -6,6 +6,12 @@
 #include "ConnectServer/Managers/ServerListManager.h"
 
 #include <cstddef>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+#include <limits>
+
+#include "Common/Utils/json.hpp"
 
 ServerListManager* ServerListManager::Instance() {
     // Function-local static keeps initialization thread-safe since C++11.
@@ -14,13 +20,143 @@ ServerListManager* ServerListManager::Instance() {
 }
 
 void ServerListManager::Load() {
-    // Reset current data before adding new entries.
+    // Load the default config file from the ConnectServer data directory.
+    if (!LoadFromFile("src/Servers/Connect/Data/ServerList.json")) {
+        std::cerr << "ServerListManager: failed to load src/Servers/Connect/Data/ServerList.json\n";
+    }
+}
+
+bool ServerListManager::LoadFromFile(const std::string& filename) {
     servers_.clear();
-    // Dummy servers for development until loading from config is implemented.
-    // Darkheim PVP server entry.
-    servers_.push_back(GameServerInfo{0, 0, "127.0.0.1", 55901, true});
-    // Darkheim VIP server entry.
-    servers_.push_back(GameServerInfo{20, 0, "127.0.0.1", 55919, true});
+
+    std::filesystem::path path(filename);
+    std::ifstream input(path);
+    if (!input.is_open() && path.is_relative()) {
+        // Walk up parent directories to locate the data file.
+        std::filesystem::path base = std::filesystem::current_path();
+        while (!base.empty()) {
+            std::filesystem::path candidate = base / path;
+            input.clear();
+            input.open(candidate);
+            if (input.is_open()) {
+                path = candidate;
+                break;
+            }
+            std::filesystem::path parent = base.parent_path();
+            if (parent == base) {
+                break;
+            }
+            base = parent;
+        }
+    }
+
+    if (!input.is_open()) {
+        std::cerr << "ServerListManager: unable to open config file: " << path << '\n';
+        return false;
+    }
+
+    nlohmann::json root;
+    try {
+        input >> root;
+    } catch (const nlohmann::json::parse_error& ex) {
+        std::cerr << "ServerListManager: JSON parse error in " << path << ": " << ex.what() << '\n';
+        return false;
+    } catch (const nlohmann::json::exception& ex) {
+        std::cerr << "ServerListManager: JSON error in " << path << ": " << ex.what() << '\n';
+        return false;
+    }
+
+    if (!root.is_array()) {
+        std::cerr << "ServerListManager: expected JSON array in " << path << '\n';
+        return false;
+    }
+
+    size_t index = 0;
+    for (const auto& entry : root) {
+        if (!entry.is_object()) {
+            std::cerr << "ServerListManager: entry " << index << " is not an object\n";
+            ++index;
+            continue;
+        }
+
+        if (!entry.contains("code") || !entry["code"].is_number_unsigned()) {
+            std::cerr << "ServerListManager: entry " << index << " missing unsigned 'code'\n";
+            ++index;
+            continue;
+        }
+        if (!entry.contains("name") || !entry["name"].is_string()) {
+            std::cerr << "ServerListManager: entry " << index << " missing string 'name'\n";
+            ++index;
+            continue;
+        }
+        if (!entry.contains("ip") || !entry["ip"].is_string()) {
+            std::cerr << "ServerListManager: entry " << index << " missing string 'ip'\n";
+            ++index;
+            continue;
+        }
+        if (!entry.contains("port") || !entry["port"].is_number_unsigned()) {
+            std::cerr << "ServerListManager: entry " << index << " missing unsigned 'port'\n";
+            ++index;
+            continue;
+        }
+
+        const uint32_t code_value = entry["code"].get<uint32_t>();
+        if (code_value > std::numeric_limits<uint16_t>::max()) {
+            std::cerr << "ServerListManager: entry " << index << " has out-of-range 'code'\n";
+            ++index;
+            continue;
+        }
+
+        const uint32_t port_value = entry["port"].get<uint32_t>();
+        if (port_value > std::numeric_limits<uint16_t>::max()) {
+            std::cerr << "ServerListManager: entry " << index << " has out-of-range 'port'\n";
+            ++index;
+            continue;
+        }
+
+        uint8_t percent = 0;
+        if (entry.contains("percent")) {
+            if (!entry["percent"].is_number_unsigned()) {
+                std::cerr << "ServerListManager: entry " << index << " has invalid 'percent'\n";
+                ++index;
+                continue;
+            }
+            const uint32_t percent_value = entry["percent"].get<uint32_t>();
+            if (percent_value > std::numeric_limits<uint8_t>::max()) {
+                std::cerr << "ServerListManager: entry " << index << " has out-of-range 'percent'\n";
+                ++index;
+                continue;
+            }
+            percent = static_cast<uint8_t>(percent_value);
+        }
+
+        bool visible = true;
+        if (entry.contains("visible")) {
+            if (!entry["visible"].is_boolean()) {
+                std::cerr << "ServerListManager: entry " << index << " has invalid 'visible'\n";
+                ++index;
+                continue;
+            }
+            visible = entry["visible"].get<bool>();
+        }
+
+        GameServerInfo info{};
+        info.ServerCode = static_cast<uint16_t>(code_value);
+        info.Percent = percent;
+        info.Name = entry["name"].get<std::string>();
+        info.IP = entry["ip"].get<std::string>();
+        info.Port = static_cast<uint16_t>(port_value);
+        info.Visible = visible;
+        servers_.push_back(std::move(info));
+        ++index;
+    }
+
+    if (servers_.empty()) {
+        std::cerr << "ServerListManager: no valid server entries loaded from " << path << '\n';
+        return false;
+    }
+
+    return true;
 }
 
 void ServerListManager::GetPacket(std::vector<uint8_t>& buffer) const {
@@ -44,4 +180,14 @@ void ServerListManager::GetPacket(std::vector<uint8_t>& buffer) const {
         buffer.push_back(server.Percent);
         buffer.push_back(server.Visible ? 1 : 0);
     }
+}
+
+const GameServerInfo* ServerListManager::FindByCode(uint16_t serverCode) const {
+    // Linear search is sufficient for the small server list size.
+    for (const auto& server : servers_) {
+        if (server.ServerCode == serverCode) {
+            return &server;
+        }
+    }
+    return nullptr;
 }

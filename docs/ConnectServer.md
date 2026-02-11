@@ -31,3 +31,4 @@ Packet size is `4 + (count * 4)`.
 - The implementation closes the client connection after responding.
 - The networking layer lives in `src/Common`.
 - The server list manager lives in `src/Servers/Connect/Managers`.
+- The server list configuration lives in `src/Servers/Connect/Data/ServerList.json`.

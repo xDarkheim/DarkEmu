@@ -1,11 +1,12 @@
 /*
  * Copyright (c) DarkEmu
- * ConnectServer event loop and server list response handling.
+ * ConnectServer event loop and packet response handling.
  */
 
 #include "ConnectServer/ServerEngine.h"
 
 #include "ConnectServer/Managers/ServerListManager.h"
+#include "ConnectServer/Packets/PacketHandler.h"
 
 #include <algorithm>
 #include <array>
@@ -153,15 +154,8 @@ void ServerEngine::handleRead(int fd) {
         return;
     }
 
-    // Check for the server list request packet.
-    if (client.buffer[0] == 0xC1 && client.buffer[2] == 0xF4) {
-        static constexpr std::array<uint8_t, 4> kRequest{0xC1, 0x04, 0xF4, 0x06};
-        if (client.buffer.size() >= kRequest.size()
-            && std::equal(kRequest.begin(), kRequest.end(), client.buffer.begin())) {
-            std::cout << "Server List Requested!" << '\n';
-            sendServerListResponse(client.socket);
-        }
-    }
+    // Dispatch the packet to the central handler (server list, server info, etc.).
+    PacketHandler::Instance()->HandlePacket(client.socket, client.buffer);
     // Close the client after responding (ConnectServer behavior).
     closeClient(fd);
 }
@@ -170,29 +164,4 @@ void ServerEngine::closeClient(int fd) {
     // Remove from epoll and erase from the connection map.
     epoll_.remove(fd);
     clients_.erase(fd);
-}
-
-void ServerEngine::sendServerListResponse(Socket& client) {
-    // Build a dynamic server list response packet.
-    std::vector<uint8_t> response;
-    ServerListManager::Instance()->GetPacket(response);
-
-    std::span<const uint8_t> data(response);
-    size_t offset = 0;
-    // Send all bytes, handling partial sends on non-blocking sockets.
-    while (offset < data.size()) {
-        ssize_t sent = client.send(data.subspan(offset));
-        if (sent > 0) {
-            offset += static_cast<size_t>(sent);
-            continue;
-        }
-        if (sent == 0) {
-            break;
-        }
-        if (errno == EAGAIN || errno == EWOULDBLOCK) {
-            break;
-        }
-        std::cerr << "send error: " << std::strerror(errno) << '\n';
-        break;
-    }
 }

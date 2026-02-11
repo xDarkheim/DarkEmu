@@ -44,8 +44,6 @@ private:
     void handleRead(int fd);
     /// Remove a client from the epoll set and internal map.
     void closeClient(int fd);
-    /// Build and send the server list response to a client.
-    void sendServerListResponse(Socket& client);
 
     EpollContext epoll_;
     Socket listen_socket_;

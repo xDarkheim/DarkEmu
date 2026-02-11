@@ -39,6 +39,28 @@ def main():
         else:
             print("Server closed connection without data.")
 
+        # 4. Emulate clicking on Server ID 0 (server info request).
+        print("Clicking on Server 0...")
+        # C1 04 F4 03 00 00 (ID 0)
+        click_packet = bytes.fromhex("C1 04 F4 03 00 00")
+
+        try:
+            sock.sendall(click_packet)
+            data = sock.recv(1024)
+        except (BrokenPipeError, ConnectionResetError):
+            data = b""
+
+        if not data:
+            # Reconnect if the server closed the connection after the list response.
+            sock.close()
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect((HOST, PORT))
+            sock.sendall(click_packet)
+            data = sock.recv(1024)
+
+        # 5. Print server info response (should contain 127.0.0.1).
+        print(f"Server IP Info: {data}")
+
         sock.close()
 
     except ConnectionRefusedError:
