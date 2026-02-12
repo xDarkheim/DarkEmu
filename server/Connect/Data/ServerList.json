@@ -1,0 +1,4 @@
+[
+  { "code": 0, "name": "Darkheim PVP", "ip": "127.0.0.1", "port": 55901, "visible": true },
+  { "code": 20, "name": "Darkheim VIP", "ip": "192.168.1.50", "port": 55919, "visible": true }
+]

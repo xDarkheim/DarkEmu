@@ -44,6 +44,7 @@ DOCUMENTATION_CLEANUP_COMPLETE.md
 
 # Resources (external sources, builds, etc.)
 resources/
+client/mu-main-5.2/
 
 # Coverage and profiling
 *.gcda
