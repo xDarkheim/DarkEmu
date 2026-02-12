@@ -10,7 +10,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Build shared common code and server modules.
 # Main structure: server/ contains all server code (Connect, Game, common utilities)
-# See docs/REORGANIZATION.md and docs/Structure.md for complete project organization
 add_subdirectory(server/common)
 add_subdirectory(server/Connect)
 add_subdirectory(server/Game)
@@ -18,3 +17,5 @@ add_subdirectory(server/Game)
 # Enable CTest and register the project's tests.
 enable_testing()
 add_subdirectory(server/tests)
+
+

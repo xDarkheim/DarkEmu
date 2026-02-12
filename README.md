@@ -3,7 +3,7 @@
 # DarkEmu
 MuOnline server emulator with clean, modular networking layers for Linux.
 
-> **✅ Ready for production!** Start with [`docs/INDEX.md`](docs/INDEX.md) for complete documentation.
+See [`docs/INDEX.md`](docs/INDEX.md) for documentation.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/banner.svg">

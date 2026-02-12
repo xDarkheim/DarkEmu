@@ -37,14 +37,9 @@ __pycache__/
 # Logs and temp
 *.log
 *.tmp
-rebuild.sh
-verify-docs.sh
-DOCUMENTATION_CLEANUP.log
-DOCUMENTATION_CLEANUP_COMPLETE.md
 
 # Resources (external sources, builds, etc.)
 resources/
-client/mu-main-5.2/
 
 # Coverage and profiling
 *.gcda
