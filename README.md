@@ -36,6 +36,7 @@ MuOnline server emulator with clean, modular networking layers for Linux.
 - `docs/ConnectServer.md` - protocol and layout notes
 - `docs/GameServer.md` - behavior and defaults
 - `docs/Docker.md` - Docker build and run steps
+- `LICENSE` - MIT license
 
 ## Visuals
 <picture>
