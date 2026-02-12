@@ -130,7 +130,7 @@ int main() {
         }
 
         // Read the full server list response packet.
-        std::array<uint8_t, 12> response{};
+        std::array<uint8_t, 15> response{};
         if (!recvExact(fd, response.data(), response.size())) {
             std::cerr << "Failed to receive response\n";
             ::close(fd);
@@ -140,10 +140,10 @@ int main() {
         }
 
         // Validate that the response matches the expected server list layout.
-        std::array<uint8_t, 12> expected{
-            0xC2, 0x0C, 0xF4, 0x06,
-            0x00, 0x00, 0x00, 0x01,
-            0x14, 0x00, 0x00, 0x01
+        std::array<uint8_t, 15> expected{
+            0xC2, 0x00, 0x0F, 0xF4, 0x06, 0x00, 0x02,
+            0x00, 0x00, 0x00, 0xCC,
+            0x14, 0x00, 0x00, 0xCC
         };
         if (response != expected) {
             std::cerr << "Unexpected response payload\n";

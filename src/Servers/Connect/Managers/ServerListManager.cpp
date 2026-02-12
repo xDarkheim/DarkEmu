@@ -119,8 +119,21 @@ bool ServerListManager::LoadFromFile(const std::string& filename) {
             continue;
         }
 
-        uint8_t percent = 0;
-        if (entry.contains("percent")) {
+        uint8_t user_total = 0;
+        if (entry.contains("user_total")) {
+            if (!entry["user_total"].is_number_unsigned()) {
+                std::cerr << "ServerListManager: entry " << index << " has invalid 'user_total'\n";
+                ++index;
+                continue;
+            }
+            const uint32_t total_value = entry["user_total"].get<uint32_t>();
+            if (total_value > std::numeric_limits<uint8_t>::max()) {
+                std::cerr << "ServerListManager: entry " << index << " has out-of-range 'user_total'\n";
+                ++index;
+                continue;
+            }
+            user_total = static_cast<uint8_t>(total_value);
+        } else if (entry.contains("percent")) {
             if (!entry["percent"].is_number_unsigned()) {
                 std::cerr << "ServerListManager: entry " << index << " has invalid 'percent'\n";
                 ++index;
@@ -132,7 +145,23 @@ bool ServerListManager::LoadFromFile(const std::string& filename) {
                 ++index;
                 continue;
             }
-            percent = static_cast<uint8_t>(percent_value);
+            user_total = static_cast<uint8_t>(percent_value);
+        }
+
+        uint8_t list_type = 0xCC;
+        if (entry.contains("list_type")) {
+            if (!entry["list_type"].is_number_unsigned()) {
+                std::cerr << "ServerListManager: entry " << index << " has invalid 'list_type'\n";
+                ++index;
+                continue;
+            }
+            const uint32_t type_value = entry["list_type"].get<uint32_t>();
+            if (type_value > std::numeric_limits<uint8_t>::max()) {
+                std::cerr << "ServerListManager: entry " << index << " has out-of-range 'list_type'\n";
+                ++index;
+                continue;
+            }
+            list_type = static_cast<uint8_t>(type_value);
         }
 
         bool visible = true;
@@ -147,7 +176,8 @@ bool ServerListManager::LoadFromFile(const std::string& filename) {
 
         GameServerInfo info{};
         info.ServerCode = static_cast<uint16_t>(code_value);
-        info.Percent = percent;
+        info.UserTotal = user_total;
+        info.ListType = list_type;
         info.Name = entry["name"].get<std::string>();
         info.IP = entry["ip"].get<std::string>();
         info.Port = static_cast<uint16_t>(port_value);
@@ -167,7 +197,8 @@ bool ServerListManager::LoadFromFile(const std::string& filename) {
 void ServerListManager::AddServer(uint16_t code, std::string name, std::string ip, uint16_t port, bool visible) {
     GameServerInfo info{};
     info.ServerCode = code;
-    info.Percent = 0;
+    info.UserTotal = 0;
+    info.ListType = 0xCC;
     info.Name = std::move(name);
     info.IP = std::move(ip);
     info.Port = port;
@@ -176,25 +207,35 @@ void ServerListManager::AddServer(uint16_t code, std::string name, std::string i
 }
 
 void ServerListManager::GetPacket(std::vector<uint8_t>& buffer) const {
-    // Packet layout: C2 <size> F4 06 followed by 4 bytes per server.
-    const size_t count = servers_.size();
-    const size_t size = 4 + (count * 4);
+    // Packet layout: C2 <size:2> F4 06 <count:2> followed by entries.
+    uint16_t count = 0;
+    for (const auto& server : servers_) {
+        if (server.Visible) {
+            ++count;
+        }
+    }
 
-    // Prepare output buffer and serialize header first.
+    const uint16_t size = static_cast<uint16_t>(7 + (count * 4));
+
     buffer.clear();
     buffer.reserve(size);
-    // Header: C2 <size> F4 06, then 4 bytes per server entry.
+
     buffer.push_back(0xC2);
-    buffer.push_back(static_cast<uint8_t>(size));
+    buffer.push_back(static_cast<uint8_t>((size >> 8) & 0xFF));
+    buffer.push_back(static_cast<uint8_t>(size & 0xFF));
     buffer.push_back(0xF4);
     buffer.push_back(0x06);
+    buffer.push_back(static_cast<uint8_t>((count >> 8) & 0xFF));
+    buffer.push_back(static_cast<uint8_t>(count & 0xFF));
 
-    // Serialize each server entry: code (LE), percent, visible flag.
     for (const auto& server : servers_) {
+        if (!server.Visible) {
+            continue;
+        }
         buffer.push_back(static_cast<uint8_t>(server.ServerCode & 0xFF));
         buffer.push_back(static_cast<uint8_t>((server.ServerCode >> 8) & 0xFF));
-        buffer.push_back(server.Percent);
-        buffer.push_back(server.Visible ? 1 : 0);
+        buffer.push_back(server.UserTotal);
+        buffer.push_back(server.ListType);
     }
 }
 

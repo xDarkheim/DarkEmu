@@ -1,0 +1,21 @@
+# Copyright (c) DarkEmu
+# Compose setup for ConnectServer and GameServer.
+
+services:
+  connectserver:
+    build: .
+    command: ["/app/build/src/Servers/Connect/DarkheimCS"]
+    ports:
+      - "44405:44405"
+    volumes:
+      - ./src/Servers/Connect/Data/ServerList.json:/app/src/Servers/Connect/Data/ServerList.json:ro
+    working_dir: /app
+    restart: unless-stopped
+
+  gameserver:
+    build: .
+    command: ["/app/build/src/Servers/Game/DarkheimGS"]
+    ports:
+      - "55901:55901"
+    working_dir: /app
+    restart: unless-stopped

@@ -100,16 +100,16 @@ bool runClient(uint16_t port) {
     }
 
     // Receive the full server list response.
-    std::array<uint8_t, 12> response{};
+    std::array<uint8_t, 15> response{};
     if (!recvExact(fd, response.data(), response.size())) {
         ::close(fd);
         return false;
     }
 
-    std::array<uint8_t, 12> expected{
-        0xC2, 0x0C, 0xF4, 0x06,
-        0x00, 0x00, 0x00, 0x01,
-        0x14, 0x00, 0x00, 0x01
+    std::array<uint8_t, 15> expected{
+        0xC2, 0x00, 0x0F, 0xF4, 0x06, 0x00, 0x02,
+        0x00, 0x00, 0x00, 0xCC,
+        0x14, 0x00, 0x00, 0xCC
     };
     // Compare the response to the expected payload.
     bool ok = response == expected;

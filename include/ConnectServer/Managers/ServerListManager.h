@@ -13,7 +13,8 @@
 // Runtime metadata for a single game server entry.
 struct GameServerInfo {
     uint16_t ServerCode;  ///< Internal server identifier used in the protocol.
-    uint8_t Percent;      ///< Population percent shown to the client.
+    uint8_t UserTotal;    ///< Current load for the server list entry.
+    uint8_t ListType;     ///< Protocol list type marker (0xCC by default).
     std::string Name;     ///< Human-readable server name for UI display.
     std::string IP;       ///< IP address where the game server listens.
     uint16_t Port;        ///< TCP port for the game server.

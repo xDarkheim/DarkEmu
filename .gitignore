@@ -50,3 +50,6 @@ lcov.info
 # OS files
 .DS_Store
 Thumbs.db
+
+#Resources
+resources/
