@@ -17,6 +17,10 @@ GameServer accepts TCP clients and logs the first packets it receives. At this s
 - Receives inbound data and prints a hex dump via `Log::Info`.
 - Does not respond to clients yet.
 
+## Layout
+- Core engine: `server/Game/`
+- Shared networking: `server/common/`
+
 ## Notes
 - Encrypted login packets are expected immediately after connect.
 - Packet parsing and decryption will be added later.

@@ -22,11 +22,11 @@ RUN useradd -m darkemu
 
 WORKDIR /app
 COPY --from=build /app/build /app/build
-COPY --from=build /app/src/Servers/Connect/Data /app/src/Servers/Connect/Data
+COPY --from=build /app/server/Connect/Data /app/server/Connect/Data
 
 USER darkemu
 
 EXPOSE 44405 55901
 
-CMD ["/app/build/src/Servers/Connect/DarkheimCS"]
+CMD ["/app/build/server/Connect/DarkheimCS"]
 

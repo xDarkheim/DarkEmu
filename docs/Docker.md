@@ -27,6 +27,7 @@ docker compose up --build gameserver
 - GameServer: 55901
 
 ## Notes
-- The container copies `src/Servers/Connect/Data/ServerList.json` into the image.
+- The container copies `server/Connect/Data/ServerList.json` into the image.
 - If you need custom server list data, mount a volume or rebuild the image.
+- See `Dockerfile` for build stages and runtime configuration.
 

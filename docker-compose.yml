@@ -4,17 +4,17 @@
 services:
   connectserver:
     build: .
-    command: ["/app/build/src/Servers/Connect/DarkheimCS"]
+    command: ["/app/build/server/Connect/DarkheimCS"]
     ports:
       - "44405:44405"
     volumes:
-      - ./src/Servers/Connect/Data/ServerList.json:/app/src/Servers/Connect/Data/ServerList.json:ro
+      - ./server/Connect/Data/ServerList.json:/app/server/Connect/Data/ServerList.json:ro
     working_dir: /app
     restart: unless-stopped
 
   gameserver:
     build: .
-    command: ["/app/build/src/Servers/Game/DarkheimGS"]
+    command: ["/app/build/server/Game/DarkheimGS"]
     ports:
       - "55901:55901"
     working_dir: /app
